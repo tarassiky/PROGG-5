@@ -42,6 +42,7 @@ asyncio.create_task(fetcher.start_monitoring(interval=300))
 
 ## Скриншоты
 
-![2025-11-18_19-39-14.png](..%2F..%2FDownloads%2F2025-11-18_19-39-14.png)
+<img width="1463" height="491" alt="2025-11-18_19-39-14" src="https://github.com/user-attachments/assets/e1d3b687-d272-4252-821c-bac861f9e02f" />
 
-![2025-11-18_19-39-56.png](..%2F..%2FDownloads%2F2025-11-18_19-39-56.png)
+<img width="1639" height="1289" alt="2025-11-18_19-39-56" src="https://github.com/user-attachments/assets/2d012aa7-6ef3-4cd8-946a-03828372bb15" />
+
