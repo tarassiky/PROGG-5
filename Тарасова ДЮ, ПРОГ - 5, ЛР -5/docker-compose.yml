@@ -1,0 +1,26 @@
+services:
+  glossary-service:
+    build:
+      context: .
+      dockerfile: glossary_service/Dockerfile
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./glossary_service/glossary_data.json:/app/glossary_data.json
+    networks:
+      - glossary-network
+
+  web-client:
+    build:
+      context: .
+      dockerfile: web_client/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - glossary-service
+    networks:
+      - glossary-network
+
+networks:
+  glossary-network:
+    driver: bridge
