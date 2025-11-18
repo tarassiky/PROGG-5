@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Observer • Курсы валют</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .client-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .client-id, .observer-count {
+            text-align: center;
+            flex: 1;
+        }
+
+        .client-id strong, .observer-count strong {
+            display: block;
+            font-size: 20px;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .connected {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .disconnected {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .currency-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .currency-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .currency-item:hover {
+            background: rgba(247, 250, 252, 0.8);
+        }
+
+        .currency-item:last-child {
+            border-bottom: none;
+        }
+
+        .currency-left {
+            flex: 1;
+        }
+
+        .currency-code {
+            font-weight: 700;
+            font-size: 18px;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .currency-name {
+            color: #718096;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .currency-rate {
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+            transition: all 0.3s ease;
+            text-align: right;
+        }
+
+        .change-positive {
+            color: #48bb78;
+            animation: pulse-green 0.5s ease;
+        }
+
+        .change-negative {
+            color: #f56565;
+            animation: pulse-red 0.5s ease;
+        }
+
+        .changes-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 4px solid #667eea;
+        }
+
+        .changes-panel strong {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .change-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .change-item:last-child {
+            border-bottom: none;
+        }
+
+        .last-update {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-style: italic;
+            margin-top: 20px;
+            font-size: 14px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .currency-item {
+                padding: 15px 20px;
+            }
+
+            .client-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <div class="logo">💹</div>
+            <h1>Currency Observer</h1>
+            <p>Курсы валют ЦБ РФ в реальном времени</p>
+        </div>
+
+        <div class="info-panel fade-in">
+            <div class="client-info">
+                <div class="client-id">
+                    <div style="color: #718096; font-size: 14px;">ID наблюдателя</div>
+                    <strong id="observerId">-</strong>
+                </div>
+                <div class="observer-count">
+                    <div style="color: #718096; font-size: 14px;">Онлайн</div>
+                    <strong id="observerCount">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls fade-in">
+            <button class="refresh-btn" onclick="refreshRates()">
+                🔄 Обновить курсы
+            </button>
+        </div>
+
+        <div id="status" class="status disconnected fade-in">
+            🔴 Отключено от сервера
+        </div>
+
+        <div id="changesPanel" class="changes-panel" style="display: none;">
+            <strong>📈 Последние изменения:</strong>
+            <div id="changesList"></div>
+        </div>
+
+        <div class="currency-card fade-in">
+            <div class="currency-item">
+                <div class="currency-left">
+                    <div class="currency-code">USD</div>
+                    <div class="currency-name">Доллар США</div>
+                </div>
+                <div class="currency-rate" id="rate-USD">-</div>
+            </div>
+
+            <div class="currency-item">
+                <div class="currency-left">
+                    <div class="currency-code">EUR</div>
+                    <div class="currency-name">Евро</div>
+                </div>
+                <div class="currency-rate" id="rate-EUR">-</div>
+            </div>
+
+            <div class="currency-item">
+                <div class="currency-left">
+                    <div class="currency-code">GBP</div>
+                    <div class="currency-name">Британский фунт</div>
+                </div>
+                <div class="currency-rate" id="rate-GBP">-</div>
+            </div>
+
+            <div class="currency-item">
+                <div class="currency-left">
+                    <div class="currency-code">CNY</div>
+                    <div class="currency-name">Китайский юань</div>
+                </div>
+                <div class="currency-rate" id="rate-CNY">-</div>
+            </div>
+
+            <div class="currency-item">
+                <div class="currency-left">
+                    <div class="currency-code">JPY</div>
+                    <div class="currency-name">Японская иена</div>
+                </div>
+                <div class="currency-rate" id="rate-JPY">-</div>
+            </div>
+        </div>
+
+        <div class="last-update" id="lastUpdate">
+            Последнее обновление: никогда
+        </div>
+    </div>
+
+    <script>
+        class CurrencyClient {
+            constructor() {
+                this.ws = null;
+                this.isConnected = false;
+                this.clientId = Math.floor(Math.random() * 10000);
+                this.lastRates = {};
+                this.connect();
+            }
+
+            connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/websocket`;
+
+                console.log('🔄 Подключение к:', wsUrl);
+                this.ws = new WebSocket(wsUrl);
+
+                this.ws.onopen = () => {
+                    console.log('✅ WebSocket подключен');
+                    this.isConnected = true;
+                    this.updateStatus('🟢 Подключено к серверу', 'connected');
+                    document.getElementById('observerId').textContent = this.clientId;
+                };
+
+                this.ws.onclose = () => {
+                    console.log('❌ WebSocket отключен');
+                    this.isConnected = false;
+                    this.updateStatus('🔴 Отключено. Переподключение...', 'disconnected');
+                    setTimeout(() => this.connect(), 3000);
+                };
+
+                this.ws.onerror = (error) => {
+                    console.error('💥 Ошибка WebSocket:', error);
+                };
+
+                this.ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleMessage(data);
+                    } catch (error) {
+                        console.error('❌ Ошибка парсинга:', error);
+                    }
+                };
+            }
+
+            handleMessage(data) {
+                switch(data.type) {
+                    case 'connection':
+                        console.log('🔗 ' + data.message);
+                        break;
+                    case 'currency_rates':
+                        this.updateRates(data);
+                        break;
+                    case 'observer_count':
+                        this.updateObserverCount(data);
+                        break;
+                }
+            }
+
+            updateRates(data) {
+                console.log('💱 Обновление курсов:', data.rates);
+
+                // Обновляем время
+                const time = new Date(data.timestamp).toLocaleTimeString('ru-RU');
+                document.getElementById('lastUpdate').textContent = `Последнее обновление: ${time}`;
+
+                // Обновляем курсы валют
+                if (data.rates) {
+                    for (const [currency, rate] of Object.entries(data.rates)) {
+                        const element = document.getElementById(`rate-${currency}`);
+                        if (element) {
+                            const oldRate = this.lastRates[currency];
+                            const newRate = parseFloat(rate);
+
+                            // Анимация изменения
+                            if (oldRate && oldRate !== newRate) {
+                                element.classList.remove('change-positive', 'change-negative');
+                                element.classList.add(newRate > oldRate ? 'change-positive' : 'change-negative');
+
+                                setTimeout(() => {
+                                    element.classList.remove('change-positive', 'change-negative');
+                                }, 2000);
+                            }
+
+                            element.textContent = newRate.toFixed(2) + ' ₽';
+                            this.lastRates[currency] = newRate;
+                        }
+                    }
+                }
+
+                // Обновляем счетчик наблюдателей
+                if (data.observer_count !== undefined) {
+                    this.updateObserverCount({count: data.observer_count});
+                }
+
+                // Показываем изменения если есть
+                if (data.changes && Object.keys(data.changes).length > 0) {
+                    this.showChanges(data.changes);
+                }
+            }
+
+            updateObserverCount(data) {
+                const countElement = document.getElementById('observerCount');
+                countElement.textContent = data.count;
+            }
+
+            showChanges(changes) {
+                const changesPanel = document.getElementById('changesPanel');
+                const changesList = document.getElementById('changesList');
+
+                changesPanel.style.display = 'block';
+                changesPanel.classList.add('fade-in');
+
+                let html = '';
+                for (const [currency, change] of Object.entries(changes)) {
+                    const symbol = change.change >= 0 ? '↗' : '↘';
+                    const colorClass = change.change >= 0 ? 'change-positive' : 'change-negative';
+
+                    html += `<div class="change-item ${colorClass}">
+                        <strong>${currency}</strong>: ${change.previous.toFixed(2)} → ${change.current.toFixed(2)}
+                        (${symbol} ${change.change > 0 ? '+' : ''}${change.change.toFixed(2)})
+                    </div>`;
+                }
+
+                changesList.innerHTML = html;
+
+                // Автоскрытие через 5 секунд
+                setTimeout(() => {
+                    changesPanel.style.display = 'none';
+                }, 5000);
+            }
+
+            updateStatus(message, className) {
+                const status = document.getElementById('status');
+                status.textContent = message;
+                status.className = `status ${className} fade-in`;
+            }
+
+            refreshRates() {
+                if (this.ws && this.isConnected) {
+                    this.ws.send(JSON.stringify({type: 'refresh'}));
+                }
+            }
+        }
+
+        function refreshRates() {
+            if (window.client) {
+                window.client.refreshRates();
+            }
+        }
+
+        // Запуск при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            window.client = new CurrencyClient();
+        });
+    </script>
+</body>
+</html>
